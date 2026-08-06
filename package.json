@@ -1,0 +1,14 @@
+{
+  "name": "blood-camp",
+  "version": "1.0.0",
+  "private": true,
+  "engines": { "node": ">=20.12" },
+  "scripts": {
+    "start": "node server.js",
+    "check": "node server.js --check"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "mongodb": "^6.8.0"
+  }
+}

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>रक्तदान शिविर पंजीकरण — वैदिक ज्ञान विज्ञान संस्थान</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi:ital@0;1&family=Mukta:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  // apply saved theme before first paint to avoid flash
+  const saved = localStorage.getItem('theme');
+  if (saved) document.documentElement.dataset.theme = saved;
+</script>
+<style>
+  :root {
+    color-scheme: light dark;
+    --crimson: #B3121F;
+    --crimson-2: #D32F3C;
+    --maroon: #7A0C14;
+    /* light theme */
+    --bg: #FDF1EE;
+    --card: #ffffff;
+    --field: #FFFDFC;
+    --ink: #2B1B1B;
+    --muted: #B08A86;
+    --line: #EAD5D2;
+    --label: #7A0C14;
+    --hero-sub: #FBD9D6;
+    --err: #B3121F;
+    --ok: #2e7d32;
+    --shadow: 0 12px 32px rgba(122,12,20,.10);
+    --ring: rgba(179,18,31,.14);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #171012;
+      --card: #221619;
+      --field: #2A1C1F;
+      --ink: #F2E4E2;
+      --muted: #9A7B77;
+      --line: #43292D;
+      --label: #E89A96;
+      --hero-sub: #F3C4C0;
+      --err: #FF8A93;
+      --ok: #6ecf74;
+      --shadow: 0 12px 32px rgba(0,0,0,.45);
+      --ring: rgba(230,80,92,.25);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #171012;
+    --card: #221619;
+    --field: #2A1C1F;
+    --ink: #F2E4E2;
+    --muted: #9A7B77;
+    --line: #43292D;
+    --label: #E89A96;
+    --hero-sub: #F3C4C0;
+    --err: #FF8A93;
+    --ok: #6ecf74;
+    --shadow: 0 12px 32px rgba(0,0,0,.45);
+    --ring: rgba(230,80,92,.25);
+  }
+
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    font-family: 'Mukta', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    transition: background .3s ease, color .3s ease;
+  }
+  /* hero band */
+  header {
+    width: 100%;
+    text-align: center;
+    padding: 34px 16px 64px;
+    background: linear-gradient(160deg, var(--maroon), var(--crimson) 55%, var(--crimson-2));
+    color: #fff;
+    position: relative;
+  }
+  header::after { /* soft scallop edge */
+    content: '';
+    position: absolute; left: 0; right: 0; bottom: -1px; height: 26px;
+    background: var(--bg);
+    border-radius: 100% 100% 0 0 / 200% 200% 0 0;
+    transition: background .3s ease;
+  }
+  .theme-toggle {
+    position: absolute; top: 14px; right: 14px; z-index: 3;
+    width: 42px; height: 42px; padding: 0;
+    border: 1px solid rgba(255,255,255,.35); border-radius: 50%;
+    background: rgba(255,255,255,.12); color: #fff;
+    font-size: 1.15rem; line-height: 1; cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: background .2s ease, transform .2s ease;
+  }
+  .theme-toggle:hover { background: rgba(255,255,255,.25); transform: rotate(15deg); }
+  .theme-toggle:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+  .logo {
+    width: 68px; height: 68px; cursor: pointer; user-select: none;
+    background: #fff; border-radius: 50%; padding: 8px;
+    box-shadow: 0 6px 6px rgba(0,0,0,.25);
+    transition: transform .2s ease;
+  }
+  .logo:hover { transform: scale(1.05); }
+  h1 {
+    font-family: 'Tiro Devanagari Hindi', serif;
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    margin-top: 14px; letter-spacing: .02em;
+  }
+  h2 {
+    font-size: 1.02rem; font-weight: 400; margin-top: 6px;
+    color: var(--hero-sub); letter-spacing: .04em;
+  }
+  /* signature: blood drop on the card seam */
+  .drop {
+    width: 34px; height: 34px;
+    background: linear-gradient(150deg, #D63340, var(--crimson));
+    border-radius: 50% 0% 50% 50%;
+    transform: rotate(-45deg);
+    margin: -52px auto 0;
+    position: relative; z-index: 2;
+    box-shadow: 0 4px 10px rgba(179,18,31,.35);
+    animation: drip 2.6s ease-in-out infinite;
+  }
+  .drop::after {
+    content: ''; position: absolute; top: 8px; left: 9px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(255,255,255,.45);
+  }
+  @keyframes drip { 0%,100% { transform: rotate(-45deg) translate(0,0); } 50% { transform: rotate(-45deg) translate(3px,3px); } }
+
+  form, dialog {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 20px 24px; width: min(640px, 92vw);
+    box-shadow: var(--shadow);
+    color: var(--ink);
+    transition: background .3s ease, border-color .3s ease;
+  }
+  form { margin: 14px 0 28px; animation: rise .5s ease both; }
+  /* ponytail: 2-col grid to cut page height; stacks on narrow screens */
+  form { display: grid; grid-template-columns: 1fr 1fr; column-gap: 14px; }
+  .full { grid-column: 1 / -1; }
+  @media (max-width: 480px) { form { grid-template-columns: 1fr; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+  label { display: block; margin: 10px 0 4px; font-weight: 600; font-size: .92rem; color: var(--label); }
+  input, select, textarea {
+    width: 100%; padding: 9px 12px;
+    border: 1.5px solid var(--line); border-radius: 10px;
+    font: inherit; background: var(--field); color: var(--ink);
+    transition: border-color .15s ease, box-shadow .15s ease, background .3s ease;
+  }
+  input:hover, select:hover, textarea:hover { border-color: var(--muted); }
+  input:focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--crimson-2);
+    box-shadow: 0 0 0 3px var(--ring);
+  }
+  textarea { resize: vertical; min-height: 52px; }
+  button {
+    width: 100%; margin-top: 24px; padding: 13px;
+    background: linear-gradient(160deg, var(--crimson), var(--maroon));
+    color: #fff; border: 0; border-radius: 10px;
+    font: inherit; font-size: 1.05rem; font-weight: 600; letter-spacing: .02em;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(179,18,31,.28);
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  button:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(179,18,31,.34); }
+  button:active { transform: translateY(0); box-shadow: 0 4px 10px rgba(179,18,31,.28); }
+  button:focus-visible { outline: 3px solid var(--label); outline-offset: 2px; }
+
+  .msg { margin-top: 14px; text-align: center; font-weight: 600; }
+  .ok { color: var(--ok); animation: pop .3s ease; } .err { color: var(--err); }
+  @keyframes pop { from { transform: scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  dialog { border: none; top: 25%; left: 29%; transform: translate(-50%, -50%); margin: 0; text-align: center; }
+  @media (max-width: 480px) { dialog { left: 5%; } }
+  dialog label { text-align: left; }
+  dialog h1 { margin-bottom: 6px; }
+  dialog[open] { animation: rise .25s ease both; }
+  dialog::backdrop { background: rgba(78,6,12,.45); backdrop-filter: blur(3px); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <button class="theme-toggle" id="themeBtn" aria-label="Toggle light/dark theme" title="Light / Dark">🌙</button>
+  <img src="logo.svg" class="logo" id="logo" alt="logo">
+  <h1>वैदिक ज्ञान विज्ञान संस्थान</h1>
+  <h2>रक्तदान शिविर — पंजीकरण फॉर्म</h2>
+</header>
+<div class="drop" aria-hidden="true"></div>
+
+<form id="regForm">
+  <div>
+    <label>पूरा नाम / Full Name</label>
+    <input name="name" required maxlength="100">
+  </div>
+
+  <div>
+    <label>मोबाइल नंबर / Mobile No.</label>
+    <input name="mobile" type="tel" required pattern="[6-9][0-9]{9}" maxlength="10" title="10 अंकों का मोबाइल नंबर">
+  </div>
+
+  <div>
+    <label>जन्म तिथि / Date of Birth</label>
+    <input name="dob" type="date" required>
+  </div>
+
+  <div>
+    <label>लिंग / Gender</label>
+    <select name="gender" required>
+      <option value="">-- चुनें --</option>
+      <option value="Male">पुरुष / Male</option>
+      <option value="Female">महिला / Female</option>
+      <option value="Other">अन्य / Other</option>
+    </select>
+  </div>
+
+  <div>
+    <label>रक्त समूह / Blood Group</label>
+    <select name="bloodGroup" required>
+      <option value="">-- चुनें --</option>
+      <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+      <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+    </select>
+  </div>
+
+  <div class="full">
+    <label>पता / Address <span style="font-weight:400;color:var(--muted)">(वैकल्पिक / optional)</span></label>
+    <textarea name="address" maxlength="300"></textarea>
+  </div>
+
+  <button class="full">पंजीकरण करें / Register</button>
+  <div class="msg full" id="msg"></div>
+</form>
+
+<!-- hidden admin login: triple-click the logo -->
+<dialog id="adminDialog">
+  <h1 style="font-size:1.15rem;color:var(--label)">Admin Login</h1>
+  <label>Username</label><input id="au" autocomplete="username">
+  <label>Password</label><input id="ap" type="password" autocomplete="current-password">
+  <button id="loginBtn">Login</button>
+  <div class="msg err" id="amsg"></div>
+</dialog>
+
+<script>
+const $ = id => document.getElementById(id);
+
+// theme: system default; toggle overrides + persists
+const isDark = () => document.documentElement.dataset.theme === 'dark' ||
+  (!document.documentElement.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches);
+const paintTheme = () => $('themeBtn').textContent = isDark() ? '☀️' : '🌙';
+$('themeBtn').onclick = () => {
+  const next = isDark() ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem('theme', next);
+  paintTheme();
+};
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paintTheme);
+paintTheme();
+
+// registration
+regForm.onsubmit = async e => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(regForm));
+  const r = await fetch('/api/register', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+  });
+  const j = await r.json().catch(() => ({}));
+  $('msg').className = 'msg ' + (r.ok ? 'ok' : 'err');
+  $('msg').textContent = r.ok ? 'पंजीकरण सफल! धन्यवाद 🙏' : (j.error || 'त्रुटि, पुनः प्रयास करें');
+  if (r.ok) regForm.reset();
+};
+
+// hidden admin entry: 3 clicks on logo within 1.5s
+let clicks = 0, timer;
+$('logo').onclick = () => {
+  clicks++;
+  clearTimeout(timer);
+  timer = setTimeout(() => clicks = 0, 1500);
+  if (clicks >= 3) { clicks = 0; adminDialog.showModal(); }
+};
+
+$('loginBtn').onclick = async () => {
+  const r = await fetch('/api/login', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user: $('au').value, pass: $('ap').value })
+  });
+  if (r.ok) location.href = '/admin.html';
+  else $('amsg').textContent = 'गलत username या password';
+};
+</script>
+</body>
+</html>

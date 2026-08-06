@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin — वैदिक ज्ञान विज्ञान संस्थान</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
+<script>const saved = localStorage.getItem('theme'); if (saved) document.documentElement.dataset.theme = saved;</script>
+<style>
+  :root {
+    --crimson:#B3121F; --crimson-2:#D32F3C; --maroon:#7A0C14;
+    --bg:#FDF1EE; --card:#ffffff; --field:#FFFDFC; --ink:#2B1B1B; --muted:#B08A86;
+    --line:#EAD5D2; --label:#7A0C14; --err:#B3121F; --ok:#2e7d32; --blue:#1565c0; --gray:#757575;
+    --shadow:0 12px 32px rgba(122,12,20,.10); --ring:rgba(179,18,31,.14);
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:#171012; --card:#221619; --field:#2A1C1F; --ink:#F2E4E2; --muted:#9A7B77;
+      --line:#43292D; --label:#E89A96; --err:#FF8A93; --ok:#6ecf74; --blue:#5b9bd5; --gray:#8a8a8a;
+      --shadow:0 12px 32px rgba(0,0,0,.45); --ring:rgba(230,80,92,.25);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:#171012; --card:#221619; --field:#2A1C1F; --ink:#F2E4E2; --muted:#9A7B77;
+    --line:#43292D; --label:#E89A96; --err:#FF8A93; --ok:#6ecf74; --blue:#5b9bd5; --gray:#8a8a8a;
+    --shadow:0 12px 32px rgba(0,0,0,.45); --ring:rgba(230,80,92,.25);
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: 'Mukta', system-ui, sans-serif; background: var(--bg); color: var(--ink); padding: 24px; transition: background .3s, color .3s; }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  h1 { font-family: 'Tiro Devanagari Hindi', serif; color: var(--label); font-size: 1.4rem; }
+  .theme-toggle { width: 42px; height: 42px; flex: none; border-radius: 50%; border: 1px solid var(--line); background: var(--card); color: var(--ink); font-size: 1.15rem; cursor: pointer; display: grid; place-items: center; box-shadow: var(--shadow); transition: transform .2s, background .3s; }
+  .theme-toggle:hover { transform: rotate(15deg); }
+  .bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 16px 0; }
+  .bar input { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; font: inherit; background: var(--field); color: var(--ink); flex: 1; min-width: 180px; transition: border-color .2s, box-shadow .2s; }
+  .bar input:focus { outline: 0; border-color: var(--crimson); box-shadow: 0 0 0 4px var(--ring); }
+  .btn { padding: 9px 16px; border: 0; border-radius: 10px; cursor: pointer; font: inherit; font-weight: 600; color: #fff; background: linear-gradient(135deg, var(--crimson-2), var(--crimson)); box-shadow: var(--shadow); }
+  .btn.green { background: linear-gradient(135deg, #43a047, #2e7d32); }
+  .btn.gray { background: var(--gray); }
+  table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); font-size: .9rem; }
+  th { background: linear-gradient(135deg, var(--crimson-2), var(--crimson)); color: #fff; }
+  td input, td select { width: 100%; padding: 6px; border: 1px solid var(--line); border-radius: 6px; font: inherit; background: var(--field); color: var(--ink); }
+  .act { white-space: nowrap; }
+  .act button { margin-right: 6px; padding: 6px 10px; border: 0; border-radius: 6px; cursor: pointer; color: #fff; font: inherit; }
+  .edit { background: var(--blue); } .del { background: var(--err); } .save { background: var(--ok); } .cancel { background: var(--gray); }
+  #count { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>रक्तदान शिविर — Admin</h1>
+  <button class="theme-toggle" id="themeBtn" aria-label="Toggle light/dark theme" title="Light / Dark">🌙</button>
+</div>
+<div class="bar">
+  <input id="search" placeholder="खोजें… (name / mobile / blood group)">
+  <span id="count"></span>
+  <button class="btn" onclick="location.href='/api/donors.csv'">⬇ Download CSV</button>
+  <button class="btn green" onclick="csvFile.click()">⬆ Upload CSV</button>
+  <input type="file" id="csvFile" accept=".csv,text/csv" hidden>
+  <button class="btn gray" onclick="document.cookie='token=; Max-Age=0; Path=/';location.href='/'">Logout</button>
+</div>
+<div style="overflow-x:auto">
+<table>
+  <thead><tr><th>Name</th><th>Mobile</th><th>DOB</th><th>Gender</th><th>Blood Group</th><th>Address</th><th>Actions</th></tr></thead>
+  <tbody id="rows"></tbody>
+</table>
+</div>
+
+<script>
+const GROUPS = ['A+','A-','B+','B-','AB+','AB-','O+','O-'];
+const GENDERS = ['Male','Female','Other'];
+let data = [];
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function load() {
+  const r = await fetch('/api/donors');
+  if (r.status === 401) return location.href = '/';
+  data = await r.json();
+  render();
+}
+
+function render() {
+  const q = search.value.toLowerCase();
+  const list = data.filter(d => !q || [d.name, d.mobile, d.gender, d.bloodGroup].join(' ').toLowerCase().includes(q));
+  count.textContent = list.length + ' donors';
+  rows.innerHTML = list.map(d => `
+    <tr data-id="${d._id}">
+      <td>${esc(d.name)}</td><td>${esc(d.mobile)}</td><td>${esc(d.dob)}</td>
+      <td>${esc(d.gender)}</td><td>${esc(d.bloodGroup)}</td><td>${esc(d.address)}</td>
+      <td class="act"><button class="edit">Edit</button><button class="del">Delete</button></td>
+    </tr>`).join('');
+}
+
+search.oninput = render;
+
+csvFile.onchange = async () => {
+  const f = csvFile.files[0];
+  if (!f) return;
+  const r = await fetch('/api/import', { method: 'POST', headers: { 'Content-Type': 'text/csv' }, body: await f.text() });
+  const j = await r.json();
+  csvFile.value = '';
+  if (!r.ok) return alert(j.error || 'Import failed');
+  let msg = `Added: ${j.added}\nSkipped (already exists): ${j.skipped}`;
+  if (j.invalid.length) msg += `\n\nInvalid rows (${j.invalid.length}):\n` + j.invalid.slice(0, 10).join('\n') + (j.invalid.length > 10 ? '\n…' : '');
+  alert(msg);
+  load();
+};
+
+rows.onclick = async e => {
+  const tr = e.target.closest('tr'); if (!tr) return;
+  const id = tr.dataset.id;
+  const d = data.find(x => x._id === id);
+
+  if (e.target.classList.contains('del')) {
+    if (!confirm(`Delete ${d.name}?`)) return;
+    await fetch('/api/donors/' + id, { method: 'DELETE' });
+    return load();
+  }
+
+  if (e.target.classList.contains('edit')) {
+    tr.innerHTML = `
+      <td><input value="${esc(d.name)}"></td>
+      <td><input value="${esc(d.mobile)}" maxlength="10"></td>
+      <td><input type="date" value="${esc(d.dob)}"></td>
+      <td><select class="gender-sel">${GENDERS.map(g => `<option ${g === d.gender ? 'selected' : ''}>${g}</option>`).join('')}</select></td>
+      <td><select class="group-sel">${GROUPS.map(g => `<option ${g === d.bloodGroup ? 'selected' : ''}>${g}</option>`).join('')}</select></td>
+      <td><input value="${esc(d.address)}"></td>
+      <td class="act"><button class="save">Save</button><button class="cancel">Cancel</button></td>`;
+    return;
+  }
+
+  if (e.target.classList.contains('cancel')) return render();
+
+  if (e.target.classList.contains('save')) {
+    const [name, mobile, dob, address] = [...tr.querySelectorAll('input')].map(i => i.value);
+    const body = { name, mobile, dob, gender: tr.querySelector('.gender-sel').value, bloodGroup: tr.querySelector('.group-sel').value, address };
+    const r = await fetch('/api/donors/' + id, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    if (!r.ok) return alert((await r.json()).error || 'Save failed');
+    return load();
+  }
+};
+
+load();
+
+const isDark = () => document.documentElement.dataset.theme === 'dark' ||
+  (!document.documentElement.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches);
+const paintTheme = () => themeBtn.textContent = isDark() ? '☀️' : '🌙';
+themeBtn.onclick = () => {
+  const next = isDark() ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem('theme', next);
+  paintTheme();
+};
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paintTheme);
+paintTheme();
+</script>
+</body>
+</html>
