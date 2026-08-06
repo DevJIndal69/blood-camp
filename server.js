@@ -100,11 +100,12 @@ if (process.argv.includes('--check')) {
 
 const express = require('express');
 const crypto = require('crypto');
+const path = require('path');
 const { MongoClient, ObjectId } = require('mongodb');
 
 const app = express();
 app.use(express.json({ limit: '5mb' })); // room for CSV imports
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public'))); // absolute path — cwd differs on Vercel
 
 let donors; // Mongo collection, set on startup
 
