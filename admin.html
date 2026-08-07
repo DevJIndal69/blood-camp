@@ -65,7 +65,7 @@
 </div>
 <div style="overflow-x:auto">
 <table>
-  <thead><tr><th>Name</th><th>Mobile</th><th>DOB</th><th>Gender</th><th>Blood Group</th><th>Address</th><th>Actions</th></tr></thead>
+  <thead><tr><th>Name</th><th>Mobile</th><th>DOB</th><th>Gender</th><th>Blood Group</th><th>Address</th><th>Note</th><th>Actions</th></tr></thead>
   <tbody id="rows"></tbody>
 </table>
 </div>
@@ -91,7 +91,7 @@ function render() {
   rows.innerHTML = list.map(d => `
     <tr data-id="${d._id}">
       <td>${esc(d.name)}</td><td>${esc(d.mobile)}</td><td>${esc(d.dob)}</td>
-      <td>${esc(d.gender)}</td><td>${esc(d.bloodGroup)}</td><td>${esc(d.address)}</td>
+      <td>${esc(d.gender)}</td><td>${esc(d.bloodGroup)}</td><td>${esc(d.address)}</td><td>${esc(d.note)}</td>
       <td class="act"><button class="edit">Edit</button><button class="del">Delete</button></td>
     </tr>`).join('');
 }
@@ -130,6 +130,7 @@ rows.onclick = async e => {
       <td><select class="gender-sel">${GENDERS.map(g => `<option ${g === d.gender ? 'selected' : ''}>${g}</option>`).join('')}</select></td>
       <td><select class="group-sel">${GROUPS.map(g => `<option ${g === d.bloodGroup ? 'selected' : ''}>${g}</option>`).join('')}</select></td>
       <td><input value="${esc(d.address)}"></td>
+      <td><input value="${esc(d.note)}" placeholder="optional"></td>
       <td class="act"><button class="save">Save</button><button class="cancel">Cancel</button></td>`;
     return;
   }
@@ -137,8 +138,8 @@ rows.onclick = async e => {
   if (e.target.classList.contains('cancel')) return render();
 
   if (e.target.classList.contains('save')) {
-    const [name, mobile, dob, address] = [...tr.querySelectorAll('input')].map(i => i.value);
-    const body = { name, mobile, dob, gender: tr.querySelector('.gender-sel').value, bloodGroup: tr.querySelector('.group-sel').value, address };
+    const [name, mobile, dob, address, note] = [...tr.querySelectorAll('input')].map(i => i.value);
+    const body = { name, mobile, dob, gender: tr.querySelector('.gender-sel').value, bloodGroup: tr.querySelector('.group-sel').value, address, note };
     const r = await fetch('/api/donors/' + id, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
     });

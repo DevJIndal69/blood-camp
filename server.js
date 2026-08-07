@@ -19,6 +19,7 @@ const clean = b => ({
   gender: b.gender,
   bloodGroup: b.bloodGroup,
   address: String(b.address ?? '').trim(),
+  note: String(b.note ?? '').trim(), // admin-only, optional
   createdAt: new Date(),
 });
 
