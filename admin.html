@@ -56,7 +56,7 @@
   <button class="theme-toggle" id="themeBtn" aria-label="Toggle light/dark theme" title="Light / Dark">🌙</button>
 </div>
 <div class="bar">
-  <input id="search" placeholder="खोजें… (name / mobile / blood group)">
+  <input id="search" placeholder="खोजें… (name / guardian / mobile / blood group)">
   <span id="count"></span>
   <button class="btn" onclick="location.href='/api/donors.csv'">⬇ Download CSV</button>
   <button class="btn green" onclick="csvFile.click()">⬆ Upload CSV</button>
@@ -65,7 +65,7 @@
 </div>
 <div style="overflow-x:auto">
 <table>
-  <thead><tr><th>Name</th><th>Mobile</th><th>DOB</th><th>Gender</th><th>Blood Group</th><th>Address</th><th>Note</th><th>Actions</th></tr></thead>
+  <thead><tr><th>Name</th><th>Guardian Name</th><th>Mobile</th><th>DOB</th><th>Gender</th><th>Blood Group</th><th>Address</th><th>Note</th><th>Actions</th></tr></thead>
   <tbody id="rows"></tbody>
 </table>
 </div>
@@ -86,11 +86,11 @@ async function load() {
 
 function render() {
   const q = search.value.toLowerCase();
-  const list = data.filter(d => !q || [d.name, d.mobile, d.gender, d.bloodGroup].join(' ').toLowerCase().includes(q));
+  const list = data.filter(d => !q || [d.name, d.guardianName, d.mobile, d.gender, d.bloodGroup].join(' ').toLowerCase().includes(q));
   count.textContent = list.length + ' donors';
   rows.innerHTML = list.map(d => `
     <tr data-id="${d._id}">
-      <td>${esc(d.name)}</td><td>${esc(d.mobile)}</td><td>${esc(d.dob)}</td>
+      <td>${esc(d.name)}</td><td>${esc(d.guardianName)}</td><td>${esc(d.mobile)}</td><td>${esc(d.dob)}</td>
       <td>${esc(d.gender)}</td><td>${esc(d.bloodGroup)}</td><td>${esc(d.address)}</td><td>${esc(d.note)}</td>
       <td class="act"><button class="edit">Edit</button><button class="del">Delete</button></td>
     </tr>`).join('');
@@ -124,7 +124,8 @@ rows.onclick = async e => {
 
   if (e.target.classList.contains('edit')) {
     tr.innerHTML = `
-      <td><input value="${esc(d.name)}"></td>
+      <td><input value="${esc(d.name)}" maxlength="100" required></td>
+      <td><input value="${esc(d.guardianName)}" maxlength="100" required></td>
       <td><input value="${esc(d.mobile)}" maxlength="10"></td>
       <td><input type="date" value="${esc(d.dob)}"></td>
       <td><select class="gender-sel">${GENDERS.map(g => `<option ${g === d.gender ? 'selected' : ''}>${g}</option>`).join('')}</select></td>
@@ -138,8 +139,8 @@ rows.onclick = async e => {
   if (e.target.classList.contains('cancel')) return render();
 
   if (e.target.classList.contains('save')) {
-    const [name, mobile, dob, address, note] = [...tr.querySelectorAll('input')].map(i => i.value);
-    const body = { name, mobile, dob, gender: tr.querySelector('.gender-sel').value, bloodGroup: tr.querySelector('.group-sel').value, address, note };
+    const [name, guardianName, mobile, dob, address, note] = [...tr.querySelectorAll('input')].map(i => i.value);
+    const body = { name, guardianName, mobile, dob, gender: tr.querySelector('.gender-sel').value, bloodGroup: tr.querySelector('.group-sel').value, address, note };
     const r = await fetch('/api/donors/' + id, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
     });

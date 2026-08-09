@@ -6,6 +6,7 @@ const GENDERS = ['Male', 'Female', 'Other'];
 function validate(b) {
   if (!b || typeof b !== 'object') return 'Invalid body';
   if (!b.name || !String(b.name).trim()) return 'Name is required';
+  if (!b.guardianName || !String(b.guardianName).trim()) return 'Father/Guardian name is required';
   if (!/^[6-9]\d{9}$/.test(String(b.mobile))) return 'Mobile must be a valid 10-digit number';
   if (!b.dob || isNaN(Date.parse(b.dob))) return 'Valid date of birth required';
   if (!GENDERS.includes(b.gender)) return 'Gender must be Male, Female, or Other';
@@ -14,6 +15,7 @@ function validate(b) {
 }
 const clean = b => ({
   name: String(b.name).trim(),
+  guardianName: String(b.guardianName).trim(),
   mobile: String(b.mobile),
   dob: b.dob,
   gender: b.gender,
@@ -26,9 +28,9 @@ const clean = b => ({
 // ---------- CSV export (hand-rolled; a csv lib for 5 columns is overkill) ----------
 const csvCell = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
 function toCsv(rows) {
-  const head = 'Name,Mobile,DOB,Gender,Blood Group,Address,Registered At';
+  const head = 'Name,Guardian Name,Mobile,DOB,Gender,Blood Group,Address,Registered At';
   const body = rows.map(r =>
-    [r.name, r.mobile, r.dob, r.gender, r.bloodGroup, r.address, r.createdAt?.toISOString?.() || r.createdAt]
+    [r.name, r.guardianName, r.mobile, r.dob, r.gender, r.bloodGroup, r.address, r.createdAt?.toISOString?.() || r.createdAt]
       .map(csvCell).join(','));
   return '﻿' + [head, ...body].join('\r\n'); // BOM so Hindi opens right in Excel
 }
@@ -58,13 +60,28 @@ function parseCsv(text) {
 }
 
 // header names -> our field names (accepts export headers or bare names, any case)
-const HEADER_MAP = { name: 'name', mobile: 'mobile', 'mobile no': 'mobile', dob: 'dob', 'date of birth': 'dob', gender: 'gender', sex: 'gender', 'blood group': 'bloodGroup', bloodgroup: 'bloodGroup', address: 'address' };
+const HEADER_MAP = {
+  name: 'name',
+  'guardian name': 'guardianName',
+  'father name': 'guardianName',
+  "father's name": 'guardianName',
+  'father/guardian name': 'guardianName',
+  mobile: 'mobile',
+  'mobile no': 'mobile',
+  dob: 'dob',
+  'date of birth': 'dob',
+  gender: 'gender',
+  sex: 'gender',
+  'blood group': 'bloodGroup',
+  bloodgroup: 'bloodGroup',
+  address: 'address',
+};
 function csvToDonors(text) {
   const rows = parseCsv(text);
   if (rows.length < 2) return { error: 'CSV needs a header row and at least one data row' };
   const fields = rows[0].map(h => HEADER_MAP[h.trim().toLowerCase()] || null);
-  if (!['name', 'mobile', 'dob', 'gender', 'bloodGroup'].every(f => fields.includes(f)))
-    return { error: 'Header must include: Name, Mobile, DOB, Gender, Blood Group' };
+  if (!['name', 'guardianName', 'mobile', 'dob', 'gender', 'bloodGroup'].every(f => fields.includes(f)))
+    return { error: 'Header must include: Name, Guardian Name, Mobile, DOB, Gender, Blood Group' };
   return {
     donors: rows.slice(1).map(r => {
       const o = {};
@@ -79,22 +96,34 @@ function csvToDonors(text) {
 
 // ---------- self-check: `node server.js --check` (no deps, no DB needed) ----------
 if (process.argv.includes('--check')) {
-  console.assert(validate({ name: 'राम', mobile: '9876543210', dob: '2000-01-01', gender: 'Male', bloodGroup: 'B+', address: 'Delhi' }) === null, 'valid row rejected');
-  console.assert(validate({ name: '', mobile: '9876543210', dob: '2000-01-01', gender: 'Male', bloodGroup: 'B+', address: 'x' }), 'empty name accepted');
-  console.assert(validate({ name: 'x', mobile: '12345', dob: '2000-01-01', gender: 'Male', bloodGroup: 'B+', address: 'x' }), 'bad mobile accepted');
-  console.assert(validate({ name: 'x', mobile: '9876543210', dob: 'nope', gender: 'Male', bloodGroup: 'B+', address: 'x' }), 'bad dob accepted');
-  console.assert(validate({ name: 'x', mobile: '9876543210', dob: '2000-01-01', gender: 'Male', bloodGroup: 'Z+', address: 'x' }), 'bad group accepted');
-  console.assert(validate({ name: 'x', mobile: '9876543210', dob: '2000-01-01', gender: 'Zebra', bloodGroup: 'O+', address: 'x' }), 'bad gender accepted');
-  console.assert(validate({ name: 'x', mobile: '9876543210', dob: '2000-01-01', bloodGroup: 'O+', address: 'x' }), 'missing gender accepted');
-  console.assert(validate({ name: 'x', mobile: '9876543210', dob: '2000-01-01', gender: 'Female', bloodGroup: 'O+' }) === null, 'missing address rejected — it is optional');
-  console.assert(toCsv([{ name: 'a"b', mobile: '9876543210', dob: '2000-01-01', gender: 'Male', bloodGroup: 'O+', address: 'x,y' }]).includes('"a""b"'), 'csv quote escaping broken');
+  const assert = require('node:assert/strict');
+  const valid = { name: 'राम', guardianName: 'श्याम', mobile: '9876543210', dob: '2000-01-01', gender: 'Male', bloodGroup: 'B+', address: 'Delhi' };
+  assert.equal(validate(valid), null, 'valid row rejected');
+  assert.equal(validate({ ...valid, name: '' }), 'Name is required', 'empty name accepted');
+  assert.equal(validate({ ...valid, guardianName: undefined }), 'Father/Guardian name is required', 'missing guardian name accepted');
+  assert.equal(validate({ ...valid, guardianName: '   ' }), 'Father/Guardian name is required', 'blank guardian name accepted');
+  assert.ok(validate({ ...valid, mobile: '12345' }), 'bad mobile accepted');
+  assert.ok(validate({ ...valid, dob: 'nope' }), 'bad dob accepted');
+  assert.ok(validate({ ...valid, bloodGroup: 'Z+' }), 'bad group accepted');
+  assert.ok(validate({ ...valid, gender: 'Zebra' }), 'bad gender accepted');
+  assert.ok(validate({ ...valid, gender: undefined }), 'missing gender accepted');
+  assert.equal(validate({ ...valid, address: undefined }), null, 'missing address rejected — it is optional');
+  assert.equal(clean({ ...valid, guardianName: '  श्याम  ' }).guardianName, 'श्याम', 'guardian name not trimmed');
+  assert.ok(toCsv([{ ...valid, name: 'a"b', address: 'x,y' }]).includes('"a""b"'), 'csv quote escaping broken');
+  assert.ok(toCsv([valid]).includes('Name,Guardian Name,Mobile,DOB,Gender,Blood Group,Address,Registered At'), 'csv column order broken');
   // round-trip: our export parses back into the same donors
-  const rt = csvToDonors(toCsv([{ name: 'राम, जी', mobile: '9876543210', dob: '2000-01-01', gender: 'Other', bloodGroup: 'B+', address: 'Delhi "110001"' }]));
-  console.assert(!rt.error && rt.donors.length === 1 && rt.donors[0].name === 'राम, जी' && rt.donors[0].gender === 'Other' && rt.donors[0].address === 'Delhi "110001"', 'csv round-trip broken');
-  const dd = csvToDonors('Name,Mobile,DOB,Gender,Blood Group,Address\nx,9876543210,15/08/2001,Male,O+,Delhi');
-  console.assert(dd.donors?.[0].dob === '2001-08-15', 'DD/MM/YYYY conversion broken');
-  console.assert(dd.donors?.[0].gender === 'Male', 'gender import broken');
-  console.assert(csvToDonors('Foo,Bar\n1,2').error, 'bad header accepted');
+  const rt = csvToDonors(toCsv([{ ...valid, name: 'राम, जी', guardianName: 'श्याम, जी', gender: 'Other', address: 'Delhi "110001"' }]));
+  assert.ok(!rt.error && rt.donors.length === 1 && rt.donors[0].name === 'राम, जी' && rt.donors[0].guardianName === 'श्याम, जी' && rt.donors[0].gender === 'Other' && rt.donors[0].address === 'Delhi "110001"', 'csv round-trip broken');
+  const dd = csvToDonors("Name,Father's Name,Mobile,DOB,Gender,Blood Group,Address\nx,y,9876543210,15/08/2001,Male,O+,Delhi");
+  assert.equal(dd.donors?.[0].dob, '2001-08-15', 'DD/MM/YYYY conversion broken');
+  assert.equal(dd.donors?.[0].gender, 'Male', 'gender import broken');
+  assert.equal(dd.donors?.[0].guardianName, 'y', 'guardian name alias import broken');
+  for (const alias of ['Guardian Name', 'Father Name', "Father's Name", 'Father/Guardian Name']) {
+    const imported = csvToDonors(`Name,${alias.toUpperCase()},Mobile,DOB,Gender,Blood Group\nx,y,9876543210,2001-08-15,Male,O+`);
+    assert.equal(imported.donors?.[0].guardianName, 'y', `${alias} import alias broken`);
+  }
+  assert.ok(csvToDonors('Name,Mobile,DOB,Gender,Blood Group\nx,9876543210,2001-08-15,Male,O+').error, 'missing guardian name header accepted');
+  assert.ok(csvToDonors('Foo,Bar\n1,2').error, 'bad header accepted');
   console.log('all checks passed');
   process.exit(0);
 }
