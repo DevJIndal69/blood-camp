@@ -35,8 +35,10 @@
   .theme-toggle { width: 42px; height: 42px; flex: none; border-radius: 50%; border: 1px solid var(--line); background: var(--card); color: var(--ink); font-size: 1.15rem; cursor: pointer; display: grid; place-items: center; box-shadow: var(--shadow); transition: transform .2s, background .3s; }
   .theme-toggle:hover { transform: rotate(15deg); }
   .bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 16px 0; }
-  .bar input { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; font: inherit; background: var(--field); color: var(--ink); flex: 1; min-width: 180px; transition: border-color .2s, box-shadow .2s; }
-  .bar input:focus { outline: 0; border-color: var(--crimson); box-shadow: 0 0 0 4px var(--ring); }
+  .bar input, .bar select { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; font: inherit; background: var(--field); color: var(--ink); transition: border-color .2s, box-shadow .2s; }
+  .bar input { flex: 1; min-width: 180px; }
+  .bar select { min-width: 150px; }
+  .bar input:focus, .bar select:focus { outline: 0; border-color: var(--crimson); box-shadow: 0 0 0 4px var(--ring); }
   .btn { padding: 9px 16px; border: 0; border-radius: 10px; cursor: pointer; font: inherit; font-weight: 600; color: #fff; background: linear-gradient(135deg, var(--crimson-2), var(--crimson)); box-shadow: var(--shadow); }
   .btn.green { background: linear-gradient(135deg, #43a047, #2e7d32); }
   .btn.gray { background: var(--gray); }
@@ -57,6 +59,11 @@
 </div>
 <div class="bar">
   <input id="search" placeholder="खोजें… (name / guardian / mobile / blood group)">
+  <select id="sort" aria-label="Sort donors">
+    <option value="latest">Latest first</option>
+    <option value="oldest">Oldest first</option>
+    <option value="name">Name A-Z</option>
+  </select>
   <span id="count"></span>
   <button class="btn" onclick="location.href='/api/donors.csv'">⬇ Download CSV</button>
   <button class="btn green" onclick="csvFile.click()">⬆ Upload CSV</button>
@@ -70,6 +77,7 @@
 </table>
 </div>
 
+<script src="/admin-sort.js"></script>
 <script>
 const GROUPS = ['A+','A-','B+','B-','AB+','AB-','O+','O-'];
 const GENDERS = ['Male','Female','Other'];
@@ -86,7 +94,8 @@ async function load() {
 
 function render() {
   const q = search.value.toLowerCase();
-  const list = data.filter(d => !q || [d.name, d.guardianName, d.mobile, d.gender, d.bloodGroup].join(' ').toLowerCase().includes(q));
+  const filtered = data.filter(d => !q || [d.name, d.guardianName, d.mobile, d.gender, d.bloodGroup].join(' ').toLowerCase().includes(q));
+  const list = AdminDonorSort.sortDonors(filtered, sort.value);
   count.textContent = list.length + ' donors';
   rows.innerHTML = list.map(d => `
     <tr data-id="${d._id}">
@@ -97,6 +106,7 @@ function render() {
 }
 
 search.oninput = render;
+sort.onchange = render;
 
 csvFile.onchange = async () => {
   const f = csvFile.files[0];

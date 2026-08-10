@@ -86,3 +86,27 @@ test('equal valid timestamps use ID descending for latest and ascending for olde
     ['1', '2', '3'],
   );
 });
+
+test('admin page provides the donor sort selector and wires it into rendering', () => {
+  const html = fs.readFileSync(path.join(__dirname, '../admin.html'), 'utf8');
+  const sortScriptIndex = html.indexOf('<script src="/admin-sort.js"></script>');
+  const appScriptIndex = html.search(/<script>\s*const GROUPS/);
+
+  assert.notEqual(sortScriptIndex, -1);
+  assert.notEqual(appScriptIndex, -1);
+  assert.ok(sortScriptIndex < appScriptIndex);
+
+  const select = html.match(/<select id="sort"[^>]*>([\s\S]*?)<\/select>/);
+  assert.ok(select);
+
+  const options = [...select[1].matchAll(/<option value="([^"]+)">([^<]+)<\/option>/g)]
+    .map(([, value, label]) => [value, label.trim()]);
+  assert.deepEqual(options, [
+    ['latest', 'Latest first'],
+    ['oldest', 'Oldest first'],
+    ['name', 'Name A-Z'],
+  ]);
+
+  assert.match(html, /AdminDonorSort\.sortDonors\(filtered, sort\.value\)/);
+  assert.match(html, /sort\.onchange = render;/);
+});
