@@ -127,3 +127,25 @@ test('server uses API_SORT for admin donors while preserving CSV name order', ()
     /app\.get\(\s*['"]\/api\/donors\.csv['"]\s*,\s*auth\s*,\s*async\s*\([^)]*\)\s*=>\s*\{\s*const\s+rows\s*=\s*await\s+donors\.find\(\s*\)\.sort\(\s*\{\s*name\s*:\s*1\s*\}\s*\)\.toArray\(\s*\)\s*;/,
   );
 });
+
+test('public registration marks blood group optional', () => {
+  const html = fs.readFileSync(path.join(__dirname, '../public/index.html'), 'utf8');
+  const field = html.match(
+    /<label>[^<]*Blood Group[\s\S]*?<\/label>\s*<select name="bloodGroup"([^>]*)>([\s\S]*?)<\/select>/,
+  );
+
+  assert.ok(field, 'blood group field not found');
+  assert.doesNotMatch(field[1], /\brequired\b/);
+  assert.match(field[0], /optional/i);
+  assert.match(field[2], /<option value="">/);
+});
+
+test('admin edit mode allows blood group to remain unprovided', () => {
+  const html = fs.readFileSync(path.join(__dirname, '../admin.html'), 'utf8');
+
+  assert.match(
+    html,
+    /<option value="" \$\{!d\.bloodGroup \? 'selected' : ''\}>Not provided<\/option>/,
+  );
+  assert.match(html, /<select class="group-sel">/);
+});

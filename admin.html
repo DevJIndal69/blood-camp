@@ -139,7 +139,7 @@ rows.onclick = async e => {
       <td><input value="${esc(d.mobile)}" maxlength="10"></td>
       <td><input type="date" value="${esc(d.dob)}"></td>
       <td><select class="gender-sel">${GENDERS.map(g => `<option ${g === d.gender ? 'selected' : ''}>${g}</option>`).join('')}</select></td>
-      <td><select class="group-sel">${GROUPS.map(g => `<option ${g === d.bloodGroup ? 'selected' : ''}>${g}</option>`).join('')}</select></td>
+      <td><select class="group-sel"><option value="" ${!d.bloodGroup ? 'selected' : ''}>Not provided</option>${GROUPS.map(g => `<option ${g === d.bloodGroup ? 'selected' : ''}>${g}</option>`).join('')}</select></td>
       <td><input value="${esc(d.address)}"></td>
       <td><input value="${esc(d.note)}" placeholder="optional"></td>
       <td class="act"><button class="save">Save</button><button class="cancel">Cancel</button></td>`;
