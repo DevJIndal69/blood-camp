@@ -132,6 +132,7 @@ const express = require('express');
 const crypto = require('crypto');
 const path = require('path');
 const { MongoClient, ObjectId } = require('mongodb');
+const { API_SORT } = require('./public/admin-sort');
 
 const app = express();
 app.use(express.json({ limit: '5mb' })); // room for CSV imports
@@ -185,7 +186,7 @@ app.post('/api/register', async (req, res) => {
 
 // ---------- admin ----------
 app.get('/api/donors', auth, async (req, res) => {
-  res.json(await donors.find().sort({ name: 1 }).toArray());
+  res.json(await donors.find().sort(API_SORT).toArray());
 });
 
 app.put('/api/donors/:id', auth, async (req, res) => {

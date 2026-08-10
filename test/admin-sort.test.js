@@ -110,3 +110,20 @@ test('admin page provides the donor sort selector and wires it into rendering', 
   assert.match(html, /AdminDonorSort\.sortDonors\(filtered, sort\.value\)/);
   assert.match(html, /sort\.onchange = render;/);
 });
+
+test('server uses API_SORT for admin donors while preserving CSV name order', () => {
+  const server = fs.readFileSync(path.join(__dirname, '../server.js'), 'utf8');
+
+  assert.match(
+    server,
+    /const\s+\{\s*API_SORT\s*\}\s*=\s*require\(\s*['"]\.\/public\/admin-sort['"]\s*\)\s*;/,
+  );
+  assert.match(
+    server,
+    /app\.get\(\s*['"]\/api\/donors['"]\s*,\s*auth\s*,\s*async\s*\([^)]*\)\s*=>\s*\{\s*res\.json\(\s*await\s+donors\.find\(\s*\)\.sort\(\s*API_SORT\s*\)\.toArray\(\s*\)\s*\)\s*;\s*\}\s*\)/,
+  );
+  assert.match(
+    server,
+    /app\.get\(\s*['"]\/api\/donors\.csv['"]\s*,\s*auth\s*,\s*async\s*\([^)]*\)\s*=>\s*\{\s*const\s+rows\s*=\s*await\s+donors\.find\(\s*\)\.sort\(\s*\{\s*name\s*:\s*1\s*\}\s*\)\.toArray\(\s*\)\s*;/,
+  );
+});
