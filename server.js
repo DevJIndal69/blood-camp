@@ -10,7 +10,8 @@ function validate(b) {
   if (!/^[6-9]\d{9}$/.test(String(b.mobile))) return 'Mobile must be a valid 10-digit number';
   if (!b.dob || isNaN(Date.parse(b.dob))) return 'Valid date of birth required';
   if (!GENDERS.includes(b.gender)) return 'Gender must be Male, Female, or Other';
-  if (!GROUPS.includes(b.bloodGroup)) return 'Invalid blood group';
+  const bloodGroup = String(b.bloodGroup ?? '').trim();
+  if (bloodGroup && !GROUPS.includes(bloodGroup)) return 'Invalid blood group';
   return null;
 }
 const clean = b => ({
@@ -19,7 +20,7 @@ const clean = b => ({
   mobile: String(b.mobile),
   dob: b.dob,
   gender: b.gender,
-  bloodGroup: b.bloodGroup,
+  bloodGroup: String(b.bloodGroup ?? '').trim(),
   address: String(b.address ?? '').trim(),
   note: String(b.note ?? '').trim(), // admin-only, optional
   createdAt: new Date(),
@@ -80,8 +81,8 @@ function csvToDonors(text) {
   const rows = parseCsv(text);
   if (rows.length < 2) return { error: 'CSV needs a header row and at least one data row' };
   const fields = rows[0].map(h => HEADER_MAP[h.trim().toLowerCase()] || null);
-  if (!['name', 'guardianName', 'mobile', 'dob', 'gender', 'bloodGroup'].every(f => fields.includes(f)))
-    return { error: 'Header must include: Name, Guardian Name, Mobile, DOB, Gender, Blood Group' };
+  if (!['name', 'guardianName', 'mobile', 'dob', 'gender'].every(f => fields.includes(f)))
+    return { error: 'Header must include: Name, Guardian Name, Mobile, DOB, Gender' };
   return {
     donors: rows.slice(1).map(r => {
       const o = {};
@@ -105,6 +106,11 @@ if (process.argv.includes('--check')) {
   assert.ok(validate({ ...valid, mobile: '12345' }), 'bad mobile accepted');
   assert.ok(validate({ ...valid, dob: 'nope' }), 'bad dob accepted');
   assert.ok(validate({ ...valid, bloodGroup: 'Z+' }), 'bad group accepted');
+  assert.equal(validate({ ...valid, bloodGroup: '' }), null, 'empty blood group rejected');
+  assert.equal(validate({ ...valid, bloodGroup: '   ' }), null, 'blank blood group rejected');
+  assert.equal(validate({ ...valid, bloodGroup: undefined }), null, 'missing blood group rejected');
+  assert.equal(clean({ ...valid, bloodGroup: undefined }).bloodGroup, '', 'missing blood group not normalized');
+  assert.equal(clean({ ...valid, bloodGroup: '   ' }).bloodGroup, '', 'blank blood group not normalized');
   assert.ok(validate({ ...valid, gender: 'Zebra' }), 'bad gender accepted');
   assert.ok(validate({ ...valid, gender: undefined }), 'missing gender accepted');
   assert.equal(validate({ ...valid, address: undefined }), null, 'missing address rejected — it is optional');
@@ -123,6 +129,21 @@ if (process.argv.includes('--check')) {
     assert.equal(imported.donors?.[0].guardianName, 'y', `${alias} import alias broken`);
   }
   assert.ok(csvToDonors('Name,Mobile,DOB,Gender,Blood Group\nx,9876543210,2001-08-15,Male,O+').error, 'missing guardian name header accepted');
+  const noGroupHeader = csvToDonors(
+    'Name,Guardian Name,Mobile,DOB,Gender,Address\nx,y,9876543210,2001-08-15,Male,Delhi'
+  );
+  assert.equal(noGroupHeader.error, undefined, 'CSV without blood group header rejected');
+  assert.equal(noGroupHeader.donors?.[0].bloodGroup, undefined, 'absent blood group header created a value');
+  assert.equal(clean(noGroupHeader.donors?.[0]).bloodGroup, '', 'CSV without blood group header not normalized');
+  const blankGroupCell = csvToDonors(
+    'Name,Guardian Name,Mobile,DOB,Gender,Blood Group\nx,y,9876543210,2001-08-15,Male,'
+  );
+  assert.equal(validate(blankGroupCell.donors?.[0]), null, 'blank CSV blood group rejected');
+  assert.equal(clean(blankGroupCell.donors?.[0]).bloodGroup, '', 'blank CSV blood group not normalized');
+  const invalidGroupCell = csvToDonors(
+    'Name,Guardian Name,Mobile,DOB,Gender,Blood Group\nx,y,9876543210,2001-08-15,Male,Z+'
+  );
+  assert.equal(validate(invalidGroupCell.donors?.[0]), 'Invalid blood group', 'invalid CSV blood group accepted');
   assert.ok(csvToDonors('Foo,Bar\n1,2').error, 'bad header accepted');
   console.log('all checks passed');
   process.exit(0);
