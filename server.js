@@ -224,6 +224,18 @@ app.put('/api/donors/:id', auth, async (req, res) => {
   res.json({ ok: true });
 });
 
+app.patch('/api/donors/:id/status', auth, async (req, res) => {
+  const { status } = req.body || {};
+  if (!['pending', 'donated', 'ineligible'].includes(status))
+    return res.status(400).json({ error: 'Invalid status' });
+  // guard: if already donated, cannot be set to ineligible
+  const donor = await donors.findOne({ _id: new ObjectId(req.params.id) });
+  if (donor?.status === 'donated' && status === 'ineligible')
+    return res.status(409).json({ error: 'Already donated — cannot mark ineligible' });
+  await donors.updateOne({ _id: new ObjectId(req.params.id) }, { $set: { status } });
+  res.json({ ok: true });
+});
+
 app.delete('/api/donors/:id', auth, async (req, res) => {
   await donors.deleteOne({ _id: new ObjectId(req.params.id) });
   res.json({ ok: true });
