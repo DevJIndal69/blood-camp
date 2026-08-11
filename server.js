@@ -201,6 +201,12 @@ app.get('/api/health', async (req, res) => {
 app.post('/api/register', async (req, res) => {
   const err = validate(req.body);
   if (err) return res.status(400).json({ error: err });
+  // duplicate: only discard when BOTH name + guardianName match (case-insensitive)
+  const dup = await donors.findOne({
+    name:         { $regex: `^${String(req.body.name).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' },
+    guardianName: { $regex: `^${String(req.body.guardianName).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' },
+  });
+  if (dup) return res.status(409).json({ error: 'यह व्यक्ति पहले से पंजीकृत है / Already registered' });
   await donors.insertOne(clean(req.body));
   res.json({ ok: true });
 });

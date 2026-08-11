@@ -216,7 +216,8 @@
 
   <div>
     <label>जन्म तिथि / Date of Birth</label>
-    <input name="dob" type="date" required>
+    <input name="dob" type="date" id="dobInput" required>
+    <span id="ageOut" style="font-size:.85rem;color:var(--muted);margin-top:4px;display:block"></span>
   </div>
 
   <div>
@@ -271,6 +272,14 @@ $('themeBtn').onclick = () => {
 };
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paintTheme);
 paintTheme();
+
+// age auto-calc from DOB
+$('dobInput').oninput = function() {
+  if (!this.value) { $('ageOut').textContent = ''; return; }
+  const diff = Date.now() - new Date(this.value);
+  const age = Math.floor(diff / (365.25 * 24 * 3600 * 1000));
+  $('ageOut').textContent = age >= 0 ? `Age: ${age} वर्ष / years` : '';
+};
 
 // registration
 regForm.onsubmit = async e => {
