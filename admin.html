@@ -49,12 +49,6 @@
   .act { white-space: nowrap; }
   .act button { margin-right: 6px; padding: 6px 10px; border: 0; border-radius: 6px; cursor: pointer; color: #fff; font: inherit; }
   .edit { background: var(--blue); } .del { background: var(--err); } .save { background: var(--ok); } .cancel { background: var(--gray); }
-  /* status badges */
-  .s-btn { padding: 4px 9px; border: 0; border-radius: 6px; cursor: pointer; font: inherit; font-size: .8rem; font-weight: 600; color: #fff; }
-  .s-pending   { background: var(--gray); }
-  .s-donated   { background: var(--ok); }
-  .s-ineligible{ background: #e65100; }
-  .s-btn[disabled] { opacity: .35; cursor: not-allowed; }
   #count { color: var(--muted); }
 </style>
 </head>
@@ -78,7 +72,7 @@
 </div>
 <div style="overflow-x:auto">
 <table>
-  <thead><tr><th>Name</th><th>Guardian Name</th><th>Mobile</th><th>DOB</th><th>Gender</th><th>Blood Group</th><th>Address</th><th>Note</th><th>Status</th><th>Actions</th></tr></thead>
+  <thead><tr><th>Name</th><th>Guardian Name</th><th>Mobile</th><th>DOB</th><th>Gender</th><th>Blood Group</th><th>Address</th><th>Note</th><th>Actions</th></tr></thead>
   <tbody id="rows"></tbody>
 </table>
 </div>
@@ -103,22 +97,12 @@ function render() {
   const filtered = data.filter(d => !q || [d.name, d.guardianName, d.mobile, d.gender, d.bloodGroup].join(' ').toLowerCase().includes(q));
   const list = AdminDonorSort.sortDonors(filtered, sort.value);
   count.textContent = list.length + ' donors';
-  rows.innerHTML = list.map(d => {
-    const st = d.status || 'pending';
-    const donated = st === 'donated';
-    return `
+  rows.innerHTML = list.map(d => `
     <tr data-id="${d._id}">
       <td>${esc(d.name)}</td><td>${esc(d.guardianName)}</td><td>${esc(d.mobile)}</td><td>${esc(d.dob)}</td>
       <td>${esc(d.gender)}</td><td>${esc(d.bloodGroup)}</td><td>${esc(d.address)}</td><td>${esc(d.note)}</td>
-      <td>
-        <button class="s-btn s-donated  status-btn" data-set="donated"     ${donated ? 'disabled title="Already donated"' : ''}>✔ Donated</button>
-        <button class="s-btn s-ineligible status-btn" data-set="ineligible" ${donated ? 'disabled style="opacity:.35;cursor:not-allowed" title="Cannot mark ineligible — already donated"' : (st==='ineligible' ? 'disabled style="opacity:.35;cursor:not-allowed"' : '')}>✖ Ineligible</button>
-        ${st === 'ineligible' ? `<button class="s-btn s-pending status-btn" data-set="pending" title="Mark eligible for next time">↺ Next Time</button>` : ''}
-        ${st === 'donated'    ? `<button class="s-btn s-pending status-btn" data-set="pending" title="Reset status">↺ Reset</button>` : ''}
-      </td>
       <td class="act"><button class="edit">Edit</button><button class="del">Delete</button></td>
-    </tr>`;
-  }).join('');
+    </tr>`).join('');
 }
 
 search.oninput = render;
@@ -141,15 +125,6 @@ rows.onclick = async e => {
   const tr = e.target.closest('tr'); if (!tr) return;
   const id = tr.dataset.id;
   const d = data.find(x => x._id === id);
-
-  if (e.target.classList.contains('status-btn')) {
-    const status = e.target.dataset.set;
-    await fetch('/api/donors/' + id + '/status', {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status })
-    });
-    return load();
-  }
 
   if (e.target.classList.contains('del')) {
     if (!confirm(`Delete ${d.name}?`)) return;
