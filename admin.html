@@ -77,7 +77,6 @@
 </table>
 </div>
 
-<script src="/admin-sort.js"></script>
 <script>
 const GROUPS = ['A+','A-','B+','B-','AB+','AB-','O+','O-'];
 const GENDERS = ['Male','Female','Other'];
@@ -95,7 +94,13 @@ async function load() {
 function render() {
   const q = search.value.toLowerCase();
   const filtered = data.filter(d => !q || [d.name, d.guardianName, d.mobile, d.gender, d.bloodGroup].join(' ').toLowerCase().includes(q));
-  const list = AdminDonorSort.sortDonors(filtered, sort.value);
+  const list = [...filtered].sort((a, b) => {
+    if (sort.value === 'name') return String(a.name).localeCompare(String(b.name), undefined, {sensitivity:'base'}) || String(a._id).localeCompare(String(b._id));
+    const ta = Date.parse(a.createdAt) || null, tb = Date.parse(b.createdAt) || null;
+    if (ta === null && tb !== null) return 1; if (ta !== null && tb === null) return -1;
+    const dir = sort.value === 'oldest' ? 1 : -1;
+    return ta !== tb ? dir * (ta - tb) : dir * String(a._id).localeCompare(String(b._id));
+  });
   count.textContent = list.length + ' donors';
   rows.innerHTML = list.map(d => `
     <tr data-id="${d._id}">
